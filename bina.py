@@ -35,27 +35,16 @@ class System(Strategy):
     level_up = 75
     level_do = 10
     def init(self):
-        # Compute moving averages the strategy demands
-        self.ma25 = self.I(SMA, self.data.Close, 10)
-        self.ma99 = self.I(SMA, self.data.Close, 50)
-        
-        # Compute daily RSI(30)
-        self.daily_rsi = self.I(RSI, self.data.Close, self.d_rsi)
-        # self.stoch_rsi = self.I(stoch_rsi, self.data.Close, self.d_rsi)
-        
+        self.d_rsi = 1
         
     def next(self):
-        price = self.data.Close[-1]
-        curr_rsi = self.daily_rsi[-1]
-
-        if repr(self._data).find('2022-06-16 07:00:00')>0:
-            print(self.position)
-            print(curr_rsi > self.level_up and price > self.ma25[-1] > self.ma99[-1])
-        # ipdb.set_trace()
-        # curr_sto_rsi = self.stoch_rsi[-1]
-        if not self.position:
-            if curr_rsi > self.level_up and price > self.ma25[-1] > self.ma99[-1] :
-                self.sell(sl = 1.04 *price, tp = 0.96 *price)
+        if self.position:
+            self.position.close()
+        change_pr = (self.data.Close[-1] - self.data.Open[-1]) > 0
+        change_pr2 = (self.data.Close[-2] - self.data.Open[-2]) > 0
+        
+        if change_pr and change_pr2:
+            self.sell()
         
         
 api_key = "qCplIYtZsWN25xPIrljTBXB8pnRXIdgfiaAn0TypIsBNVyS5CdW1AFfTpjSnqsHv"
@@ -88,7 +77,7 @@ for i in range(1,30-step,step):
                               "Taker buy base asset volume, Taker buy quote asset volume, Ignore".split(", "))
     df = df.iloc[:, :-5]
     df.index = pd.to_datetime(df.Opentime, unit='ms') + pd.DateOffset(hours=7)
-
+    ipdb.set_trace()
     bt = Backtest(df, System, commission=.001,
                   exclusive_orders=True, cash=1000.0)
     stats = bt.run()
